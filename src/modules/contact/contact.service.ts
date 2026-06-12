@@ -117,7 +117,7 @@ function getGmailTransport(): nodemailer.Transporter | null {
   return gmailTransport;
 }
 
-async function sendViaGmail(input: CreateContactMessageInput): Promise<boolean> {
+async function sendViaGmail(input: CreateContactMessageInput, toEmail: string): Promise<boolean> {
   const transport = getGmailTransport();
   if (!transport) {
     logger.info("contact email: gmail not configured (GMAIL_USER / GMAIL_APP_PASSWORD missing)");
@@ -128,14 +128,14 @@ async function sendViaGmail(input: CreateContactMessageInput): Promise<boolean> 
   try {
     const info = await transport.sendMail({
       from: `"Dyners Contact" <${env.GMAIL_USER}>`,
-      to: env.CONTACT_TO_EMAIL,
+      to: toEmail,
       replyTo: input.email,
       subject,
       text,
       html,
     });
     logger.info(
-      { messageId: info.messageId, to: env.CONTACT_TO_EMAIL, accepted: info.accepted },
+      { messageId: info.messageId, to: toEmail, accepted: info.accepted },
       "contact email sent via gmail"
     );
     return true;
@@ -145,7 +145,7 @@ async function sendViaGmail(input: CreateContactMessageInput): Promise<boolean> 
   }
 }
 
-async function sendViaResend(input: CreateContactMessageInput): Promise<boolean> {
+async function sendViaResend(input: CreateContactMessageInput, toEmail: string): Promise<boolean> {
   if (!env.RESEND_API_KEY) return false;
 
   const { subject, text, html } = buildEmail(input);
@@ -153,14 +153,14 @@ async function sendViaResend(input: CreateContactMessageInput): Promise<boolean>
     const resend = new Resend(env.RESEND_API_KEY);
     const { data, error } = await resend.emails.send({
       from: "Dyners Contact <onboarding@resend.dev>",
-      to: env.CONTACT_TO_EMAIL,
+      to: toEmail,
       replyTo: input.email,
       subject,
       text,
       html,
     });
     if (error) throw new Error(error.message);
-    logger.info({ id: data?.id, to: env.CONTACT_TO_EMAIL }, "contact email sent via resend");
+    logger.info({ id: data?.id, to: toEmail }, "contact email sent via resend");
     return true;
   } catch (err) {
     logger.error({ err }, "contact email: resend send FAILED");
@@ -173,9 +173,9 @@ async function sendViaResend(input: CreateContactMessageInput): Promise<boolean>
  * Best-effort: the message is already stored in the database, so an email
  * outage must never fail the request.
  */
-export async function notifyByEmail(input: CreateContactMessageInput): Promise<void> {
-  if (await sendViaGmail(input)) return;
-  if (await sendViaResend(input)) return;
+export async function notifyByEmail(input: CreateContactMessageInput, toEmail = env.CONTACT_TO_EMAIL): Promise<void> {
+  if (await sendViaGmail(input, toEmail)) return;
+  if (await sendViaResend(input, toEmail)) return;
   if (!env.GMAIL_USER && !env.RESEND_API_KEY) {
     logger.info("contact email skipped — no GMAIL_USER or RESEND_API_KEY configured");
   } else {

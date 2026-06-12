@@ -188,10 +188,16 @@ async function main() {
 
   await prisma.admin.upsert({
     where: { email },
-    update: {},
-    create: { email, passwordHash: await argon2.hash(password, { type: argon2.argon2id }) },
+    update: { role: "super_admin" },
+    create: { email, passwordHash: await argon2.hash(password, { type: argon2.argon2id }), role: "super_admin" },
   });
   console.log(`Admin ready: ${email}`);
+
+  await prisma.siteSettings.upsert({
+    where: { id: "site" },
+    update: {},
+    create: { id: "site", address: "Kigali, Rwanda", email: "dyners@gmail.com", phone: "+250 788 123 456" },
+  });
 
   if ((await prisma.service.count()) === 0) {
     await prisma.service.createMany({ data: services });

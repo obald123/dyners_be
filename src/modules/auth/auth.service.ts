@@ -69,7 +69,7 @@ export async function login({ email, password }: LoginInput) {
   }
 
   const tokens = await issueTokens(admin.id);
-  return { admin: { id: admin.id, email: admin.email, name: admin.name }, ...tokens };
+  return { admin: { id: admin.id, email: admin.email, name: admin.name, role: admin.role }, ...tokens };
 }
 
 export async function refresh(rawToken: string) {
@@ -109,7 +109,7 @@ export async function logout(rawToken: string | undefined): Promise<void> {
 export async function getProfile(adminId: string) {
   const admin = await prisma.admin.findUnique({
     where: { id: adminId },
-    select: { id: true, email: true, name: true, createdAt: true },
+    select: { id: true, email: true, name: true, role: true, createdAt: true },
   });
   if (!admin) throw new NotFoundError("Admin");
   return admin;
@@ -138,7 +138,7 @@ export async function updateProfile(adminId: string, input: UpdateProfileInput) 
       email: input.email?.toLowerCase(),
       ...(passwordHash ? { passwordHash } : {}),
     },
-    select: { id: true, email: true, name: true },
+    select: { id: true, email: true, name: true, role: true },
   });
 
   logActivity(adminId, "Updated profile", "admin", adminId);

@@ -1,7 +1,8 @@
 import type { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env";
-import { UnauthorizedError } from "../lib/errors";
+import { prisma } from "../db/client";
+import { ForbiddenError, UnauthorizedError } from "../lib/errors";
 
 interface AccessTokenPayload {
   sub: string;
@@ -36,4 +37,23 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
   } catch {
     next(new UnauthorizedError("Invalid or expired token."));
   }
+};
+
+export const requireSuperAdmin: RequestHandler = async (req, _res, next) => {
+  if (!req.adminId) {
+    next(new UnauthorizedError("Authentication required."));
+    return;
+  }
+
+  const admin = await prisma.admin.findUnique({
+    where: { id: req.adminId },
+    select: { role: true },
+  });
+
+  if (admin?.role !== "super_admin") {
+    next(new ForbiddenError("Super admin access required."));
+    return;
+  }
+
+  next();
 };

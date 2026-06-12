@@ -7,6 +7,16 @@ import { notifyByEmail } from "./contact.service";
 
 export const contactRouter = Router();
 
+contactRouter.get("/settings", async (_req, res) => {
+  const settings = await prisma.siteSettings.upsert({
+    where: { id: "site" },
+    update: {},
+    create: { id: "site" },
+    select: { address: true, email: true, phone: true },
+  });
+  res.json(settings);
+});
+
 contactRouter.post(
   "/",
   contactLimiter,
@@ -14,7 +24,11 @@ contactRouter.post(
   async (req, res) => {
     const input = getValidated<CreateContactMessageInput>(req, "body");
     await prisma.contactMessage.create({ data: input });
-    void notifyByEmail(input);
+    const settings = await prisma.siteSettings.findUnique({
+      where: { id: "site" },
+      select: { email: true },
+    });
+    void notifyByEmail(input, settings?.email);
     res.status(201).json({ success: true });
   }
 );
