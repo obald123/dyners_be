@@ -17,7 +17,7 @@ testimonialsRouter.get("/", async (_req, res) => {
   const items = await prisma.testimonial.findMany({
     where: { published: true },
     orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, role: true, quote: true, rating: true, avatarUrl: true },
+    select: { id: true, name: true, role: true, quote: true, rating: true, avatarUrl: true, imageUrl: true },
   });
   res.json(items);
 });

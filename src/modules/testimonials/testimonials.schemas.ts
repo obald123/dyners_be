@@ -7,6 +7,7 @@ export const createTestimonialSchema = z.object({
   quote: z.string().min(5).max(1000),
   rating: z.number().int().min(1).max(5).default(5),
   avatarUrl: imageUrlSchema.optional(),
+  imageUrl: imageUrlSchema.optional(),
   published: z.boolean().default(true),
 });
 export type CreateTestimonialInput = z.infer<typeof createTestimonialSchema>;

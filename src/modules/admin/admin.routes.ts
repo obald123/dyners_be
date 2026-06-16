@@ -31,7 +31,7 @@ const upload = multer({
 });
 
 const uploadFolderSchema = z.object({
-  folder: z.enum(["gallery", "collection", "services", "menus", "avatars"]).default("gallery"),
+  folder: z.enum(["gallery", "collection", "services", "menus", "avatars", "testimonials"]).default("gallery"),
 });
 
 const updateSettingsSchema = z.object({

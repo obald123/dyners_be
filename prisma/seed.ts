@@ -217,9 +217,9 @@ const collectionItems = [
 ];
 
 const testimonials = [
-  { name: "Amina K.", role: "Bride", quote: "Dyners made our wedding day absolutely magical. The food was exceptional and the service flawless.", rating: 5 },
-  { name: "Jean-Pierre M.", role: "Event Coordinator", quote: "We've worked with Dyners on five corporate events - they always deliver beyond expectations.", rating: 5 },
-  { name: "Claire N.", role: "Private Client", quote: "From the tent setup to the last dessert, everything was perfect. Highly recommend!", rating: 5 },
+  { name: "Amina K.", role: "Bride", quote: "Dyners made our wedding day absolutely magical. The food was exceptional and the service flawless.", rating: 5, imageUrl: "/images/gallery/1_54163933022_l.jpg" },
+  { name: "Jean-Pierre M.", role: "Event Coordinator", quote: "We've worked with Dyners on five corporate events - they always deliver beyond expectations.", rating: 5, imageUrl: "/images/gallery/2_54164808566_l.jpg" },
+  { name: "Claire N.", role: "Private Client", quote: "From the tent setup to the last dessert, everything was perfect. Highly recommend!", rating: 5, imageUrl: "/images/gallery/3_54165265015_l.jpg" },
 ];
 
 async function main() {
