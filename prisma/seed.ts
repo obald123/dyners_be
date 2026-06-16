@@ -41,17 +41,49 @@ const courseMenus: Record<string, Record<string, string[]>> = {
     "Snacks & Breaks": ["Samosas", "Mandazi", "Cookies / Biscuits", "Mini Sandwiches", "Tea / Coffee"],
     Beverages: ["Tea (Black, Milk, Spiced)", "Coffee (Black, Milk)", "Fresh Juices", "Soft Drinks", "Bottled Water"],
   },
-  school: {
-    Breakfast: ["Porridge (Millet/Sorghum)", "Bread", "Tea (Milk)"],
-    "Main Meals": ["Rice & Beans", "Ugali & Beef Or Bean Stew", "Plantains", "Sweet Potatoes", "Vegetables (Cabbage, Greens)"],
-    Snacks: ["Mandazi", "Fruits (Bananas, Oranges)", "Corns"],
-    Beverages: ["Milk", "Porridge Drinks", "Fanta"],
-  },
   private: {
     Appetizers: ["Samosas / Spring Rolls", "Chicken Wings", "Meat Skewers", "Mini Burgers Or Sandwiches", "Chips / Fries"],
     "Main Courses": ["Buffet-Style Mixed Meals", "Grilled Meats (Chicken, Beef)", "Rice / Potatoes / Pasta", "Chapati", "Vegetable Sides"],
     Desserts: ["Cakes", "Doughnuts", "Fruit Platters", "Sweet Pastries"],
     Beverages: ["Juice", "Soft Drinks", "Water", "Optional Alcohol (Beer, Wine, Spirits)"],
+  },
+};
+
+const schoolWeeklyMenu: Record<string, Record<string, string[]>> = {
+  Monday: {
+    Breakfast: ["Porridge (Millet/Sorghum)", "Bread", "Tea (Milk)"],
+    Lunch: ["Rice & Beans", "Vegetables (Cabbage, Greens)", "Fruit"],
+    Dinner: ["Ugali & Bean Stew", "Sweet Potatoes", "Mixed Greens"],
+  },
+  Tuesday: {
+    Breakfast: ["Porridge", "Mandazi", "Milk"],
+    Lunch: ["Ugali & Beef Or Bean Stew", "Plantains", "Vegetables"],
+    Dinner: ["Rice & Beans", "Sweet Potatoes", "Greens"],
+  },
+  Wednesday: {
+    Breakfast: ["Bread", "Boiled Eggs", "Tea (Milk)"],
+    Lunch: ["Rice & Beans", "Vegetables (Cabbage, Greens)", "Fruit"],
+    Dinner: ["Chapati & Bean Stew", "Mixed Vegetables"],
+  },
+  Thursday: {
+    Breakfast: ["Porridge (Millet/Sorghum)", "Bread", "Milk"],
+    Lunch: ["Ugali & Beef Stew", "Plantains", "Cabbage"],
+    Dinner: ["Rice & Beans", "Sweet Potatoes", "Greens"],
+  },
+  Friday: {
+    Breakfast: ["Mandazi", "Fresh Fruit", "Tea (Milk)"],
+    Lunch: ["Rice & Beans", "Vegetables", "Fruit"],
+    Dinner: ["Ugali & Beef Or Bean Stew", "Sweet Potatoes", "Mixed Greens"],
+  },
+  Saturday: {
+    Breakfast: ["Mandazi", "Fresh Fruit", "Milk"],
+    Lunch: ["Rice & Chicken Stew", "Plantains", "Salad"],
+    Dinner: ["Pasta & Vegetables", "Bread"],
+  },
+  Sunday: {
+    Breakfast: ["Porridge", "Bread", "Tea (Milk)"],
+    Lunch: ["Rice & Beans", "Grilled Chicken", "Vegetables"],
+    Dinner: ["Ugali & Bean Stew", "Sweet Potatoes"],
   },
 };
 
@@ -86,6 +118,17 @@ const menuItems = [
   ...Object.entries(courseMenus).flatMap(([category, courses]) =>
     Object.entries(courses).flatMap(([course, names], courseIdx) =>
       names.map((name, i) => ({ name, category, course, sortOrder: courseIdx * 100 + i }))
+    )
+  ),
+  ...Object.entries(schoolWeeklyMenu).flatMap(([day, meals], dayIdx) =>
+    Object.entries(meals).flatMap(([meal, names], mealIdx) =>
+      names.map((name, i) => ({
+        name,
+        category: "school",
+        course: day,
+        description: meal,
+        sortOrder: dayIdx * 1000 + mealIdx * 100 + i,
+      }))
     )
   ),
   ...Object.entries(deliveryProducts).flatMap(([course, products], courseIdx) =>

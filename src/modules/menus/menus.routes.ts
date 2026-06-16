@@ -21,7 +21,7 @@ menusRouter.get("/", validate({ query: menuQuerySchema }), async (req, res) => {
   const items = await prisma.menuItem.findMany({
     where: { published: true, ...(category ? { category } : {}) },
     orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
-    select: { id: true, name: true, description: true, price: true, image: true, category: true, course: true },
+    select: { id: true, name: true, description: true, price: true, image: true, category: true, course: true, sortOrder: true },
   });
   res.json(items);
 });
