@@ -8,6 +8,7 @@ import { uploadLimiter } from "../../middleware/rateLimiters";
 import { idParamSchema, type IdParam } from "../../lib/schemas";
 import { BadRequestError, ConflictError, ForbiddenError } from "../../lib/errors";
 import { uploadImage } from "../../lib/cloudinary";
+import { sendCampaignEmail } from "../newsletter/newsletter.service";
 import { logActivity } from "../../lib/activity";
 import {
   updateMessageStatusSchema,
@@ -53,7 +54,7 @@ export const adminRouter = Router();
 adminRouter.use(requireAuth);
 
 adminRouter.get("/stats", async (_req, res) => {
-  const [testimonials, galleryImages, menuItems, collectionItems, services, newMessages] =
+  const [testimonials, galleryImages, menuItems, collectionItems, services, newMessages, subscribers] =
     await prisma.$transaction([
       prisma.testimonial.count(),
       prisma.galleryImage.count(),
@@ -61,8 +62,9 @@ adminRouter.get("/stats", async (_req, res) => {
       prisma.collectionItem.count(),
       prisma.service.count(),
       prisma.contactMessage.count({ where: { status: "new" } }),
+      prisma.newsletterSubscriber.count(),
     ]);
-  res.json({ testimonials, galleryImages, menuItems, collectionItems, services, newMessages });
+  res.json({ testimonials, galleryImages, menuItems, collectionItems, services, newMessages, subscribers });
 });
 
 adminRouter.get("/activity", async (_req, res) => {
@@ -171,6 +173,39 @@ adminRouter.delete("/messages/:id", validate({ params: idParamSchema }), async (
   logActivity(req.adminId, "Deleted contact message", "message", id);
   res.status(204).end();
 });
+
+const newsletterSendSchema = z.object({
+  subject: z.string().min(1).max(200),
+  body: z.string().min(1).max(50000),
+});
+
+adminRouter.get("/newsletter/subscribers", requireAuth, async (_req, res) => {
+  const count = await prisma.newsletterSubscriber.count();
+  const subscribers = await prisma.newsletterSubscriber.findMany({ orderBy: { createdAt: "desc" } });
+  res.json({ count, subscribers });
+});
+
+adminRouter.post(
+  "/newsletter/send",
+  requireAuth,
+  validate({ body: newsletterSendSchema }),
+  async (req, res) => {
+    const { subject, body } = getValidated<z.infer<typeof newsletterSendSchema>>(req, "body");
+
+    const subscribers = await prisma.newsletterSubscriber.findMany({ select: { email: true } });
+    if (subscribers.length === 0) {
+      res.status(400).json({ error: "No subscribers to send to." });
+      return;
+    }
+
+    for (const s of subscribers) {
+      void sendCampaignEmail(s.email, subject, body);
+    }
+
+    logActivity(req.adminId, `Sent newsletter "${subject}" to ${subscribers.length} subscribers`, "newsletter");
+    res.json({ success: true, sent: subscribers.length });
+  }
+);
 
 adminRouter.post(
   "/uploads",

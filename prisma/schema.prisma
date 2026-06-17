@@ -139,6 +139,12 @@ model StoredImage {
   createdAt DateTime @default(now())
 }
 
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
 model ActivityLog {
   id        String   @id @default(uuid())
   adminId   String?

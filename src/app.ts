@@ -17,6 +17,7 @@ import { servicesRouter } from "./modules/services/services.routes";
 import { contactRouter } from "./modules/contact/contact.routes";
 import { adminRouter } from "./modules/admin/admin.routes";
 import { imagesRouter } from "./modules/images/images.routes";
+import { newsletterRouter } from "./modules/newsletter/newsletter.routes";
 
 export function createApp() {
   const app = express();
@@ -63,6 +64,7 @@ export function createApp() {
   api.use("/contact", contactRouter);
   api.use("/admin", adminRouter);
   api.use("/images", imagesRouter);
+  api.use("/newsletter", newsletterRouter);
   app.use("/api/v1", api);
 
   app.use(notFoundHandler);
