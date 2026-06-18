@@ -8,6 +8,7 @@ import { corsOrigins } from "./config/env";
 import { logger } from "./lib/logger";
 import { globalLimiter } from "./middleware/rateLimiters";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { resolve } from "node:path";
 import { authRouter } from "./modules/auth/auth.routes";
 import { testimonialsRouter } from "./modules/testimonials/testimonials.routes";
 import { galleryRouter } from "./modules/gallery/gallery.routes";
@@ -54,6 +55,7 @@ export function createApp() {
   });
 
   const api = express.Router();
+  api.use("/uploads", express.static(resolve("uploads")));
   api.use(globalLimiter);
   api.use("/auth", authRouter);
   api.use("/testimonials", testimonialsRouter);

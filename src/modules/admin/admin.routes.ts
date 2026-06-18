@@ -7,7 +7,7 @@ import { validate, getValidated } from "../../middleware/validate";
 import { uploadLimiter } from "../../middleware/rateLimiters";
 import { idParamSchema, type IdParam } from "../../lib/schemas";
 import { BadRequestError, ConflictError, ForbiddenError } from "../../lib/errors";
-import { uploadImage } from "../../lib/cloudinary";
+import { uploadImage, uploadVideo } from "../../lib/cloudinary";
 import { sendCampaignEmail } from "../newsletter/newsletter.service";
 import { logActivity } from "../../lib/activity";
 import {
@@ -25,6 +25,19 @@ const upload = multer({
     // First gate only — the real check is sharp's decode in uploadImage.
     if (!file.mimetype.startsWith("image/")) {
       cb(new BadRequestError("Only image uploads are allowed."));
+      return;
+    }
+    cb(null, true);
+  },
+});
+
+const videoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"];
+    if (!allowed.includes(file.mimetype)) {
+      cb(new BadRequestError("Only MP4, WebM, OGG, and MOV files are allowed."));
       return;
     }
     cb(null, true);
@@ -218,6 +231,19 @@ adminRouter.post(
     const { folder } = getValidated<z.infer<typeof uploadFolderSchema>>(req, "query");
     const uploaded = await uploadImage(req.file.buffer, folder);
     logActivity(req.adminId, `Uploaded image to ${folder}`, "upload", uploaded.publicId);
+    res.status(201).json(uploaded);
+  }
+);
+
+adminRouter.post(
+  "/uploads/video",
+  uploadLimiter,
+  videoUpload.single("file"),
+  async (req, res) => {
+    if (!req.file) throw new BadRequestError("No file provided (field name: file).");
+
+    const uploaded = await uploadVideo(req.file.buffer, "gallery", req.file.mimetype);
+    logActivity(req.adminId, "Uploaded video to gallery", "upload", uploaded.publicId);
     res.status(201).json(uploaded);
   }
 );

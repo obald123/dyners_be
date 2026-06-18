@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { imageUrlSchema } from "../../lib/schemas";
-import { SCHOOL_DAYS, SCHOOL_MEALS, isSchoolDay, isSchoolMeal } from "./schoolMenu";
+import { SCHOOL_DAYS, SCHOOL_MEALS, isSchoolDay } from "./schoolMenu";
 
 export const menuCategories = ["weddings", "corporate", "school", "private", "delivery"] as const;
 
@@ -30,10 +30,10 @@ function validateSchoolMenuFields(
     });
   }
 
-  if (!data.description || !isSchoolMeal(data.description)) {
+  if (!data.description || !data.description.trim()) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "School menu items must use Breakfast, Lunch, or Dinner as description",
+      message: "School menu items must have a meal slot name as description",
       path: ["description"],
     });
   }
@@ -43,13 +43,9 @@ export const createMenuItemSchema = menuItemBaseSchema.superRefine(validateSchoo
 export type CreateMenuItemInput = z.infer<typeof createMenuItemSchema>;
 
 export const updateMenuItemSchema = menuItemBaseSchema.partial().superRefine((data, ctx) => {
-  if (data.category === "school" || (data.course && isSchoolDay(data.course)) || (data.description && isSchoolMeal(data.description))) {
+  if (data.category === "school") {
     validateSchoolMenuFields(
-      {
-        category: data.category ?? "school",
-        course: data.course,
-        description: data.description,
-      },
+      { category: "school", course: data.course, description: data.description },
       ctx
     );
   }

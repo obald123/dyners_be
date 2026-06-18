@@ -4,8 +4,13 @@ import { env } from "../config/env";
 import { prisma } from "../db/client";
 import { BadRequestError } from "./errors";
 import { logger } from "./logger";
+import { randomUUID } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import { extname, join, resolve } from "node:path";
 
 const DB_PUBLIC_ID_PREFIX = "db:";
+const LOCAL_PUBLIC_ID_PREFIX = "local:";
+const UPLOADS_DIR = resolve("uploads");
 
 cloudinary.config({
   cloud_name: env.CLOUDINARY_CLOUD_NAME,
@@ -88,6 +93,62 @@ function uploadToCloudinary(buffer: Buffer, folder: string): Promise<UploadedIma
   });
 }
 
+const MIME_EXT: Record<string, string> = {
+  "video/mp4": ".mp4",
+  "video/webm": ".webm",
+  "video/ogg": ".ogv",
+  "video/quicktime": ".mov",
+};
+
+export interface UploadedVideo {
+  url: string;
+  publicId: string;
+}
+
+/**
+ * Uploads a video file to Cloudinary. Skips sharp processing (videos can't be
+ * decoded by sharp). Falls back to saving to the local filesystem.
+ */
+export async function uploadVideo(buffer: Buffer, folder: string, mime?: string): Promise<UploadedVideo> {
+  if (cloudinaryConfigured()) {
+    try {
+      return await uploadToCloudinaryVideo(buffer, folder);
+    } catch (err) {
+      logger.warn({ err, folder }, "cloudinary video upload failed — falling back to local storage");
+    }
+  }
+
+  const id = randomUUID();
+  const dir = join(UPLOADS_DIR, folder);
+  await mkdir(dir, { recursive: true });
+  const ext = (mime && MIME_EXT[mime]) ?? ".mp4";
+  const filename = `${id}${ext}`;
+  await writeFile(join(dir, filename), buffer);
+  return {
+    url: `/api/v1/uploads/${folder}/${filename}`,
+    publicId: `${LOCAL_PUBLIC_ID_PREFIX}${id}`,
+  };
+}
+
+function uploadToCloudinaryVideo(buffer: Buffer, folder: string): Promise<UploadedVideo> {
+  return new Promise<UploadedVideo>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: `dyners/${folder}`, resource_type: "auto" },
+      (error, uploaded) => {
+        if (error || !uploaded) {
+          reject(error ?? new Error("Empty Cloudinary response"));
+          return;
+        }
+        resolve({
+          url: uploaded.secure_url,
+          publicId: uploaded.public_id,
+        });
+      }
+    );
+    stream.end(buffer);
+  });
+}
+
 /** Best-effort removal of a replaced/deleted image (Cloudinary or DB-stored). */
 export function destroyImage(publicId: string | null | undefined): void {
   if (!publicId) return;
@@ -99,6 +160,8 @@ export function destroyImage(publicId: string | null | undefined): void {
       .catch((err) => logger.warn({ err, publicId }, "stored image delete failed"));
     return;
   }
+
+  if (publicId.startsWith(LOCAL_PUBLIC_ID_PREFIX)) return;
 
   if (!cloudinaryConfigured()) return;
   void cloudinary.uploader
